@@ -43,66 +43,32 @@ set(ASE_PKG_FILE ${ASE_SERVER_RTL}/ase_pkg.sv)
 set(PLATFORM_PKG_FILE ${PLATFORM_IF_RTL}/ccip_if_pkg.sv)
 
 if(ASE_SIMULATOR STREQUAL "QUESTA")
+  find_package(Quartus)
   find_package(Questa)
-
-  set(VLOG_DEFINES_MENTOR "+define+VENDOR_ALTERA +define+TOOL_QUARTUS # +define+NUM_AFUS=1 +define+NLB400_MODE_0"
+  set(VLOG_DEFINES "+define+VENDOR_ALTERA +define+TOOL_QUARTUS"
     CACHE STRING "Modelsim/Questa compiler define flags")
-  set(VLOG_INCLUDES_MENTOR "+incdir+.+work+${ASE_SERVER_RTL}+${PLATFORM_IF_RTL}"
+  set(VLOG_INCLUDES "+incdir+.+work+${ASE_SERVER_RTL}+${PLATFORM_IF_RTL}"
     CACHE STRING "Modelsim/Questa compiler include flags")
-
-  set(VLOG_OPTS_MENTOR "-nologo -sv +librescan -timescale ${ASE_TIMESCALE} -work work +define+${SIMULATOR} +define+${ASE_PLATFORM} +define+VENDOR_ALTERA +define+TOOL_QUARTUS -novopt")
-
-  ## Questasim template
-  configure_file(${ASE_SCRIPTS_IN}/afu_platform_config.py.in
-    ${PROJECT_BINARY_DIR}/scripts/in/afu_platform_config.py @ONLY)
-  configure_file(${ASE_SCRIPTS_IN}/afu_synth_setup_std.py.in
-    ${PROJECT_BINARY_DIR}/scripts/in/afu_synth_setup.py @ONLY)
-  configure_file(${ASE_SCRIPTS_IN}/rtl_src_config.py.in
-    ${PROJECT_BINARY_DIR}/scripts/in/rtl_src_config.py @ONLY)
-
-  # now copy the temporary into the final destination, setting the permissions
-  file(COPY ${PROJECT_BINARY_DIR}/scripts/in/afu_platform_config.py
-    DESTINATION ${PROJECT_BINARY_DIR}/scripts
-    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ
-    GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-
-  file(COPY ${PROJECT_BINARY_DIR}/scripts/in/afu_synth_setup.py
-    DESTINATION ${PROJECT_BINARY_DIR}/scripts
-    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ
-    GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-
-  file(COPY ${PROJECT_BINARY_DIR}/scripts/in/rtl_src_config.py
-    DESTINATION ${PROJECT_BINARY_DIR}/scripts
-    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ
-    GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-
-  # Add extra project files
-  configure_file(${ASE_SCRIPTS_IN}/platform.txt.in
-    ${PROJECT_BINARY_DIR}/platform.txt)
-  configure_file(${ASE_SCRIPTS_IN}/platform_if_addenda.txt.in
-    ${PROJECT_BINARY_DIR}/${ASE_PLATFORM_ABBREV}/sim/platform_if_addenda.txt)
-  configure_file(${ASE_SCRIPTS_IN}/platform_if_includes.txt.in
-    ${PROJECT_BINARY_DIR}/${ASE_PLATFORM_ABBREV}/sim/platform_if_includes.txt)
-
-  # Configure generic header file
-  configure_file(${PLATFORM_IF_DIR}/rtl/platform_if.vh
-    ${PROJECT_BINARY_DIR}/platform_if.vh)
+  set(VLOG_OPTS "-nologo -sv +librescan -timescale ${ASE_TIMESCALE} -work work +define+${ASE_SIMULATOR} +define+${ASE_PLATFORM} +define+VENDOR_ALTERA +define+TOOL_QUARTUS -novopt"
+    CACHE STRING "Modelsim/Questa compiler flags")
+  set(VSIM_OPTS "-c -l run.log -dpioutoftheblue 1 -novopt -sv_lib ${ASE_SHOBJ_NAME} -do vsim_run.tcl -sv_seed 1234"
+    CACHE STRING "Modelsim/Questa simulator flags")
 
   # Define rule to generate platform_afu_top_config.vh
-  add_custom_command(OUTPUT "platform_afu_top_config.vh"
+  add_custom_command(OUTPUT "sim/rtl/platform_afu_top_config.vh"
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMAND ${PROJECT_BINARY_DIR}/scripts/afu_platform_config.py --platform_if ${ASE_PLATFORM_ABBREV} --ifc=${ASE_PLATFORM_IF} --sim -v ${ASE_PLATFORM_ABBREV})
+    COMMAND ${AFU_SIM_SETUP_EXECUTABLE} --sources=${ASE_PROJECT_SOURCES} -p ${ASE_PLATFORM_ABBREV} -t ${ASE_SIMULATOR} sim)
 
-  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include)
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/sim/include)
   add_custom_command(OUTPUT "include/platform_dpi.h"
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/sim
     COMMAND ${VLIB_EXECUTABLE} work
-    COMMAND ${VLOG_EXECUTABLE} -dpiheader include/platform_dpi.h -f platform.txt -nologo -sv +librescan  -timescale ${ASE_TIMESCALE} -work work +define+${ASE_SIMULATOR} +define+${ASE_PLATFORM} +define+VENDOR_ALTERA +define+TOOL_QUARTUS -novopt ${VLOG_INCLUDES_MENTOR} -l vlog.log
-    DEPENDS "platform_afu_top_config.vh")
+    COMMAND ${VLOG_EXECUTABLE} -dpiheader ${PROJECT_BINARY_DIR}/sim/include/platform_dpi.h -f platform.txt ${VLOG_OPTS} ${VLOG_INCLUDES} -l vlog.log
+    DEPENDS "sim/rtl/platform_afu_top_config.vh")
 
   add_custom_command (OUTPUT vlog
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMAND ${VLOG_EXECUTABLE} -f platform.txt -nologo -sv +librescan  -timescale ${ASE_TIMESCALE} -work work +define+${ASE_SIMULATOR} +define+${ASE_PLATFORM} +define+VENDOR_ALTERA +define+TOOL_QUARTUS -novopt ${VLOG_INCLUDES_MENTOR} -l vlog.log
+    COMMAND ${VLOG_EXECUTABLE} -f platform.txt ${VLOG_OPTS} ${VLOG_INCLUDES} -l vlog.log
     DEPENDS "include/platform_dpi.h")
 
   # Simulation step

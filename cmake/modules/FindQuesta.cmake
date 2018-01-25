@@ -1,4 +1,4 @@
-## Copyright(c) 2017, Intel Corporation
+## Copyright(c) 2017, 2018, Intel Corporation
 ##
 ## Redistribution  and  use  in source  and  binary  forms,  with  or  without
 ## modification, are permitted provided that the following conditions are met:
@@ -24,19 +24,61 @@
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,  EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
 
-find_package(Perl REQUIRED)
-
-set(MTI_HOME $ENV{MTI_HOME})
-if(MTI_HOME)
-  message("-- Using MTI_HOME: ${MTI_HOME}")
-  set(VSIM_EXECUTABLE "${MTI_HOME}/bin/vsim" CACHE PATH "Path to vsim")
-  set(VLOG_EXECUTABLE "${MTI_HOME}/bin/vlog" CACHE PATH "Path to vlog")
-  set(VLIB_EXECUTABLE "${MTI_HOME}/bin/vlib" CACHE PATH "Path to vlib")
-  set(VMAP_EXECUTABLE "${MTI_HOME}/bin/vmap" CACHE PATH "Path to vlib")
-  set(VPI_INCLUDE_DIR "${MTI_HOME}/include"  CACHE PATH "Path to dpi.h file")
-else()
-  set(MTI_HOME "" CACHE PATH "Path to Questa Verilog simulator")
+if (QUESTA_FOUND)
+    return()
 endif()
+
+find_package(PackageHandleStandardArgs REQUIRED)
+
+set(QUESTA_HINTS
+  $ENV{MTI_HOME}
+  $ENV{MODELSIM_ROOTDIR}
+  $ENV{MODELSIM_HOME}
+  $ENV{MODELSIM_ROOT}
+  $ENV{MODELSIM_DIR}
+  $ENV{MODELSIM}
+  $ENV{MODELSIM_ROOT}
+  $ENV{QUARTUS_ROOTDIR}
+  $ENV{QUARTUS_HOME}
+  $ENV{QUARTUS_ROOT}
+  $ENV{QUARTUS_DIR}
+  $ENV{QUARTUS})
+
+set(QUESTA_PATH_SUFFIXES
+  bin
+  ../modelsim_ae/bin
+  ../modelsim_ase/bin)
+
+find_program(VLIB_EXECUTABLE vlib
+    HINTS ${QUESTA_HINTS}
+    PATH_SUFFIXES bin ${QUESTA_PATH_SUFFIXES}
+    DOC "Path to the vlib executable")
+
+find_program(VMAP_EXECUTABLE vmap
+    HINTS ${QUESTA_HINTS}
+    PATH_SUFFIXES bin ${QUESTA_PATH_SUFFIXES}
+    DOC "Path to the vmap executable")
+
+find_program(VCOM_EXECUTABLE vcom
+    HINTS ${QUESTA_HINTS}
+    PATH_SUFFIXES bin ${QUESTA_PATH_SUFFIXES}
+    DOC "Path to the vcom executable")
+
+find_program(VLOG_EXECUTABLE vlog
+    HINTS ${QUESTA_HINTS}
+    PATH_SUFFIXES bin ${QUESTA_PATH_SUFFIXES}
+    DOC "Path to the vlog executable")
+
+find_program(VSIM_EXECUTABLE vsim
+    HINTS ${QUESTA_HINTS}
+    PATH_SUFFIXES bin ${QUESTA_PATH_SUFFIXES}
+    DOC "Path to the vsim executable")
+
+mark_as_advanced(VLIB_EXECUTABLE)
+mark_as_advanced(VMAP_EXECUTABLE)
+mark_as_advanced(VCOM_EXECUTABLE)
+mark_as_advanced(VLOG_EXECUTABLE)
+mark_as_advanced(VSIM_EXECUTABLE)
 
 set(libsvdpi_LIBRARIES 1)
 find_path(libsvdpi_INCLUDE_DIRS
@@ -46,3 +88,11 @@ find_path(libsvdpi_INCLUDE_DIRS
 if(libsvdpi_LIBRARIES AND libsvdpi_INCLUDE_DIRS)
   set(libsvdpi_FOUND true)
 endif(libsvdpi_LIBRARIES AND libsvdpi_INCLUDE_DIRS)
+
+find_package_handle_standard_args(Questa REQUIRED_VARS
+    QUESTA_VSIM
+    QUESTA_VMAP
+    QUESTA_VCOM
+    QUESTA_VLOG
+    QUESTA_VLIB
+    libsvdpi_INCLUDE_DIRS)

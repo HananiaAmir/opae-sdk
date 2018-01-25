@@ -1,4 +1,4 @@
-## Copyright(c) 2017, Intel Corporation
+## Copyright(c) 2017, 2018, Intel Corporation
 ##
 ## Redistribution  and  use  in source  and  binary  forms,  with  or  without
 ## modification, are permitted provided that the following conditions are met:
@@ -58,18 +58,17 @@ target_compile_definitions(opae-c-ase-server
 
 if(ASE_SIMULATOR STREQUAL "QUESTA")
   find_package(Questa)
-
-  target_include_directories(opae-c-ase-server PUBLIC
-    $<BUILD_INTERFACE:${OPAE_INCLUDE_DIR}>
-    $<INSTALL_INTERFACE:include>
-    $<BUILD_INTERFACE:${libsvdpi_INCLUDE_DIRS}>
-    PRIVATE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>)
-
-  set_target_properties(opae-c-ase-server PROPERTIES
-    VERSION ${INTEL_FPGA_API_VERSION}
-    SOVERSION ${INTEL_FPGA_API_VER_MAJOR})
-
-  add_dependencies(opae-c-ase-server vlog_setup)
-
 endif()
+
+target_include_directories(opae-c-ase-server PUBLIC
+  $<BUILD_INTERFACE:${OPAE_INCLUDE_DIR}>
+  $<INSTALL_INTERFACE:include>
+  $<BUILD_INTERFACE:${libsvdpi_INCLUDE_DIRS}>
+  PRIVATE
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>)
+
+set_target_properties(opae-c-ase-server PROPERTIES
+  VERSION ${INTEL_FPGA_API_VERSION}
+  SOVERSION ${INTEL_FPGA_API_VER_MAJOR})
+
+add_dependencies(opae-c-ase-server vlog_setup)
