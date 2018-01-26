@@ -59,6 +59,8 @@ if(ASE_SIMULATOR STREQUAL "QUESTA")
   set(questa_flags "")
   list(APPEND questa_flags +define+VENDOR_ALTERA)
   list(APPEND questa_flags +define+TOOL_QUARTUS)
+  # list(APPEND questa_flags +define+NUM_AFUS=1)
+  # list(APPEND questa_flags +define+NLB400_MODE_0)
   list(APPEND questa_flags +define+${ASE_SIMULATOR})
   list(APPEND questa_flags +define+${ASE_PLATFORM})
   set(QUESTA_VLOG_DEFINES "${questa_flags}"
