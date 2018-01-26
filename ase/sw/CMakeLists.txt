@@ -29,6 +29,12 @@ cmake_minimum_required(VERSION 2.8.12)
 project("opae-c-ase-server")
 find_package(Threads REQUIRED)
 
+# Locate sv DPI header files
+if(ASE_SIMULATOR STREQUAL "QUESTA")
+  find_package(Quartus)
+  find_package(Questa)
+endif()
+
 # Directories
 set(ASE_SERVER_SRC  ${PROJECT_SOURCE_DIR})
 
@@ -60,6 +66,8 @@ if(ASE_SIMULATOR STREQUAL "QUESTA")
   find_package(Questa)
 endif()
 
+message("location at ${libsvdpi_INCLUDE_DIRS}")
+
 target_include_directories(opae-c-ase-server PUBLIC
   $<BUILD_INTERFACE:${OPAE_INCLUDE_DIR}>
   $<INSTALL_INTERFACE:include>
@@ -71,4 +79,4 @@ set_target_properties(opae-c-ase-server PROPERTIES
   VERSION ${INTEL_FPGA_API_VERSION}
   SOVERSION ${INTEL_FPGA_API_VER_MAJOR})
 
-add_dependencies(opae-c-ase-server vlog_setup)
+add_dependencies(opae-c-ase-server vlog_compile)

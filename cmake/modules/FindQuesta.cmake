@@ -29,6 +29,9 @@ if (QUESTA_FOUND)
 endif()
 
 find_package(PackageHandleStandardArgs REQUIRED)
+if(NOT ${MTI_HOME})
+  set(MTI_HOME $ENV{MTI_HOME})
+endif()
 
 set(QUESTA_HINTS
   $ENV{MTI_HOME}
@@ -49,50 +52,51 @@ set(QUESTA_PATH_SUFFIXES
   ../modelsim_ae/bin
   ../modelsim_ase/bin)
 
-find_program(VLIB_EXECUTABLE vlib
+find_program(QUESTA_VLIB_EXECUTABLE vlib
     HINTS ${QUESTA_HINTS}
     PATH_SUFFIXES bin ${QUESTA_PATH_SUFFIXES}
     DOC "Path to the vlib executable")
 
-find_program(VMAP_EXECUTABLE vmap
+find_program(QUESTA_VMAP_EXECUTABLE vmap
     HINTS ${QUESTA_HINTS}
     PATH_SUFFIXES bin ${QUESTA_PATH_SUFFIXES}
     DOC "Path to the vmap executable")
 
-find_program(VCOM_EXECUTABLE vcom
+find_program(QUESTA_VCOM_EXECUTABLE vcom
     HINTS ${QUESTA_HINTS}
     PATH_SUFFIXES bin ${QUESTA_PATH_SUFFIXES}
     DOC "Path to the vcom executable")
 
-find_program(VLOG_EXECUTABLE vlog
+find_program(QUESTA_VLOG_EXECUTABLE vlog
     HINTS ${QUESTA_HINTS}
     PATH_SUFFIXES bin ${QUESTA_PATH_SUFFIXES}
     DOC "Path to the vlog executable")
 
-find_program(VSIM_EXECUTABLE vsim
+find_program(QUESTA_VSIM_EXECUTABLE vsim
     HINTS ${QUESTA_HINTS}
     PATH_SUFFIXES bin ${QUESTA_PATH_SUFFIXES}
     DOC "Path to the vsim executable")
 
-mark_as_advanced(VLIB_EXECUTABLE)
-mark_as_advanced(VMAP_EXECUTABLE)
-mark_as_advanced(VCOM_EXECUTABLE)
-mark_as_advanced(VLOG_EXECUTABLE)
-mark_as_advanced(VSIM_EXECUTABLE)
+mark_as_advanced(QUESTA_VLIB_EXECUTABLE)
+mark_as_advanced(QUESTA_VMAP_EXECUTABLE)
+mark_as_advanced(QUESTA_VCOM_EXECUTABLE)
+mark_as_advanced(QUESTA_VLOG_EXECUTABLE)
+mark_as_advanced(QUESTA_VSIM_EXECUTABLE)
 
 set(libsvdpi_LIBRARIES 1)
 find_path(libsvdpi_INCLUDE_DIRS
   NAMES "svdpi.h"
-  PATHS "${MTI_HOME}/include")
+  PATHS ${QUESTA_HINTS}
+  PATH_SUFFIXES include)
 
 if(libsvdpi_LIBRARIES AND libsvdpi_INCLUDE_DIRS)
   set(libsvdpi_FOUND true)
 endif(libsvdpi_LIBRARIES AND libsvdpi_INCLUDE_DIRS)
 
 find_package_handle_standard_args(Questa REQUIRED_VARS
-    QUESTA_VSIM
-    QUESTA_VMAP
-    QUESTA_VCOM
-    QUESTA_VLOG
-    QUESTA_VLIB
+    QUESTA_VSIM_EXECUTABLE
+    QUESTA_VMAP_EXECUTABLE
+    QUESTA_VCOM_EXECUTABLE
+    QUESTA_VLOG_EXECUTABLE
+    QUESTA_VLIB_EXECUTABLE
     libsvdpi_INCLUDE_DIRS)

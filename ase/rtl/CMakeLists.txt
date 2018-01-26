@@ -27,6 +27,16 @@
 cmake_minimum_required(VERSION 2.8.12)
 project("opae-c-ase-platform")
 
+# find afu_sim_setup
+find_program(AFU_SIM_SETUP_EXECUTABLE
+  NAMES
+    afu_sim_setup
+  PATHS
+    /usr/bin
+    /usr/local/bin
+    /opt/local/bin
+    DOC "AFU simulation setup utility")
+
 # Directories
 set(ASE_SERVER_RTL     ${PROJECT_SOURCE_DIR})
 set(PLATFORM_SHARE_DIR ${CMAKE_SOURCE_DIR}/../platform)
@@ -45,34 +55,63 @@ set(PLATFORM_PKG_FILE ${PLATFORM_IF_RTL}/ccip_if_pkg.sv)
 if(ASE_SIMULATOR STREQUAL "QUESTA")
   find_package(Quartus)
   find_package(Questa)
-  set(VLOG_DEFINES "+define+VENDOR_ALTERA +define+TOOL_QUARTUS"
+
+  set(questa_flags "")
+  list(APPEND questa_flags +define+VENDOR_ALTERA)
+  list(APPEND questa_flags +define+TOOL_QUARTUS)
+  list(APPEND questa_flags +define+${ASE_SIMULATOR})
+  list(APPEND questa_flags +define+${ASE_PLATFORM})
+  set(QUESTA_VLOG_DEFINES "${questa_flags}"
     CACHE STRING "Modelsim/Questa compiler define flags")
-  set(VLOG_INCLUDES "+incdir+.+work+${ASE_SERVER_RTL}+${PLATFORM_IF_RTL}"
+
+  set(questa_flags "")
+  list(APPEND questa_flags +incdir+.+work+${ASE_SERVER_RTL}+${PLATFORM_IF_RTL})
+  set(QUESTA_VLOG_INCLUDES "${questa_flags}"
     CACHE STRING "Modelsim/Questa compiler include flags")
-  set(VLOG_OPTS "-nologo -sv +librescan -timescale ${ASE_TIMESCALE} -work work +define+${ASE_SIMULATOR} +define+${ASE_PLATFORM} +define+VENDOR_ALTERA +define+TOOL_QUARTUS -novopt"
+
+  set(questa_flags "")
+  list(APPEND questa_flags -nologo -sv +librescan)
+  list(APPEND questa_flags -timescale ${ASE_TIMESCALE})
+  list(APPEND questa_flags -work work)
+  list(APPEND questa_flags -novopt)
+  list(APPEND questa_flags ${QUESTA_VLOG_DEFINES})
+  list(APPEND questa_flags ${QUESTA_VLOG_INCLUDES})
+  list(APPEND questa_flags -f ${ASE_PROJECT_SOURCES})
+  list(APPEND questa_flags -l vlog.log)
+  set(QUESTA_VLOG_FLAGS "${questa_flags}"
     CACHE STRING "Modelsim/Questa compiler flags")
-  set(VSIM_OPTS "-c -l run.log -dpioutoftheblue 1 -novopt -sv_lib ${ASE_SHOBJ_NAME} -do vsim_run.tcl -sv_seed 1234"
+
+  set(questa_flags "")
+  list(APPEND questa_flags -novopt)
+  list(APPEND questa_flags -c)
+  list(APPEND questa_flags -dpioutoftheblue 1)
+  list(APPEND questa_flags -wlf ${questa_waveform})
+  list(APPEND questa_flags -do vsim_run.tcl)
+  list(APPEND questa_flags -sv_seed 1234)
+  list(APPEND questa_flags -l vlog_run.log)
+  set(QUESTA_VSIM_FLAGS "${questa_flags}"
     CACHE STRING "Modelsim/Questa simulator flags")
 
   # Define rule to generate platform_afu_top_config.vh
-  add_custom_command(OUTPUT "sim/rtl/platform_afu_top_config.vh"
+  add_custom_command(OUTPUT "questa/rtl/platform_afu_top_config.vh"
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMAND ${AFU_SIM_SETUP_EXECUTABLE} --sources=${ASE_PROJECT_SOURCES} -p ${ASE_PLATFORM_ABBREV} -t ${ASE_SIMULATOR} sim)
+    COMMAND cmake -E remove_directory ${PROJECT_BINARY_DIR}/questa
+    COMMAND ${AFU_SIM_SETUP_EXECUTABLE} --sources=${CMAKE_BINARY_DIR}/${ASE_PROJECT_SOURCES} -p ${ASE_PLATFORM_ABBREV} -t ${ASE_SIMULATOR} questa)
 
-  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/sim/include)
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/questa/rtl/include)
   add_custom_command(OUTPUT "include/platform_dpi.h"
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/sim
-    COMMAND ${VLIB_EXECUTABLE} work
-    COMMAND ${VLOG_EXECUTABLE} -dpiheader ${PROJECT_BINARY_DIR}/sim/include/platform_dpi.h -f platform.txt ${VLOG_OPTS} ${VLOG_INCLUDES} -l vlog.log
-    DEPENDS "sim/rtl/platform_afu_top_config.vh")
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/questa/rtl
+    COMMAND ${QUESTA_VLIB_EXECUTABLE} work
+    COMMAND ${QUESTA_VLOG_EXECUTABLE} -dpiheader ${PROJECT_BINARY_DIR}/questa/rtl/include/platform_dpi.h ${QUESTA_VLOG_FLAGS}
+    DEPENDS "questa/rtl/platform_afu_top_config.vh")
 
   add_custom_command (OUTPUT vlog
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMAND ${VLOG_EXECUTABLE} -f platform.txt ${VLOG_OPTS} ${VLOG_INCLUDES} -l vlog.log
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/questa/rtl
+    COMMAND ${QUESTA_VLOG_EXECUTABLE} ${QUESTA_VLOG_FLAGS}
     DEPENDS "include/platform_dpi.h")
 
   # Simulation step
-  add_custom_target (vlog_setup ALL
+  add_custom_target (vlog_compile ALL
     DEPENDS vlog)
 
 endif()
