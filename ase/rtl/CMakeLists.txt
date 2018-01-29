@@ -59,8 +59,6 @@ if(ASE_SIMULATOR STREQUAL "QUESTA")
   set(questa_flags "")
   list(APPEND questa_flags +define+VENDOR_ALTERA)
   list(APPEND questa_flags +define+TOOL_QUARTUS)
-  # list(APPEND questa_flags +define+NUM_AFUS=1)
-  # list(APPEND questa_flags +define+NLB400_MODE_0)
   list(APPEND questa_flags +define+${ASE_SIMULATOR})
   list(APPEND questa_flags +define+${ASE_PLATFORM})
   set(QUESTA_VLOG_DEFINES "${questa_flags}"
@@ -100,17 +98,17 @@ if(ASE_SIMULATOR STREQUAL "QUESTA")
     COMMAND cmake -E remove_directory ${PROJECT_BINARY_DIR}/questa
     COMMAND ${AFU_SIM_SETUP_EXECUTABLE} --sources=${CMAKE_BINARY_DIR}/${ASE_PROJECT_SOURCES} -p ${ASE_PLATFORM_ABBREV} -t ${ASE_SIMULATOR} questa)
 
-  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/questa/rtl/include)
-  add_custom_command(OUTPUT "include/platform_dpi.h"
+  file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/questa/sw/include)
+  add_custom_command(OUTPUT "questa/sw/include/platform_dpi.h"
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/questa/rtl
     COMMAND ${QUESTA_VLIB_EXECUTABLE} work
-    COMMAND ${QUESTA_VLOG_EXECUTABLE} -dpiheader ${PROJECT_BINARY_DIR}/questa/rtl/include/platform_dpi.h ${QUESTA_VLOG_FLAGS}
+    COMMAND ${QUESTA_VLOG_EXECUTABLE} -dpiheader ${PROJECT_BINARY_DIR}/questa/sw/include/platform_dpi.h ${QUESTA_VLOG_FLAGS}
     DEPENDS "questa/rtl/platform_afu_top_config.vh")
 
   add_custom_command (OUTPUT vlog
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/questa/rtl
     COMMAND ${QUESTA_VLOG_EXECUTABLE} ${QUESTA_VLOG_FLAGS}
-    DEPENDS "include/platform_dpi.h")
+    DEPENDS "questa/sw/include/platform_dpi.h")
 
   # Simulation step
   add_custom_target (vlog_compile ALL

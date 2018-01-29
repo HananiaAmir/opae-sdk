@@ -1,4 +1,4 @@
-## Copyright(c) 2017, Intel Corporation
+## Copyright(c) 2017, 2018, Intel Corporation
 ##
 ## Redistribution  and  use  in source  and  binary  forms,  with  or  without
 ## modification, are permitted provided that the following conditions are met:
@@ -28,19 +28,37 @@
 project(ase)
 set(OPAE_SHARE_DIR share/opae)
 set(ASE_SHARE_DIR  share/opae/ase)
+set(ASE_SAMPLES    ${ASE_SHARE_DIR}/samples)
 add_subdirectory(api)
 
 install(DIRECTORY rtl          DESTINATION share/opae/ase COMPONENT asertl)
 install(DIRECTORY sw           DESTINATION share/opae/ase COMPONENT asesw)
 install(DIRECTORY scripts      DESTINATION share/opae/ase USE_SOURCE_PERMISSIONS COMPONENT asescripts)
 
-# Post-installation Development cmake project
+# Post-installation cmake project
 configure_file(${PROJECT_SOURCE_DIR}/in/CMakeLists.txt.in
   ${PROJECT_BINARY_DIR}/CMakeLists.txt)
 install(DIRECTORY in DESTINATION share/opae/ase COMPONENT asescripts)
 install(PROGRAMS ${PROJECT_BINARY_DIR}/CMakeLists.txt
   DESTINATION ${ASE_SHARE_DIR}
   COMPONENT asescripts)
+
+# Samples
+configure_file(${PROJECT_SOURCE_DIR}/samples/intg_xeon_nlb/sources.txt
+  ${PROJECT_BINARY_DIR}/samples/intg_xeon_nlb/sources.txt)
+configure_file(${PROJECT_SOURCE_DIR}/samples/intg_xeon_nlb/ccip_std_afu.json
+  ${PROJECT_BINARY_DIR}/samples/intg_xeon_nlb/ccip_std_afu.json)
+install(FILES ${PROJECT_BINARY_DIR}/samples/intg_xeon_nlb/sources.txt
+  DESTINATION ${ASE_SAMPLES}/intg_xeon_nlb
+  COMPONENT aseextra)
+install(FILES ${PROJECT_BINARY_DIR}/samples/intg_xeon_nlb/ccip_std_afu.json
+  DESTINATION ${ASE_SAMPLES}/intg_xeon_nlb
+  COMPONENT aseextra)
+file(COPY ${PROJECT_SOURCE_DIR}/samples/intg_xeon_nlb/src
+  DESTINATION ${PROJECT_BINARY_DIR}/samples/intg_xeon_nlb)
+install(DIRECTORY ${PROJECT_BINARY_DIR}/samples/intg_xeon_nlb/src
+  DESTINATION ${ASE_SAMPLES}/intg_xeon_nlb
+  COMPONENT aseextra)
 
 # Post-installation Development scripts
 install(PROGRAMS ${CMAKE_SOURCE_DIR}/cmake/modules/compiler_config.cmake
